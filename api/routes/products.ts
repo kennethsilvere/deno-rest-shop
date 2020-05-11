@@ -10,9 +10,13 @@ productsRouter.get("/", (ctx: Context) => {
 });
 
 productsRouter.post("/", (ctx: Context) => {
+  const name = ctx.req.body.name;
+  const price = ctx.req.body.price;
+  const savedProduct = { name, price };
   return {
     hello: "products",
     method: "post",
+    savedProduct,
   };
 });
 

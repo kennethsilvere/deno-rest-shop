@@ -7,7 +7,10 @@ ordersRouter.get("/", (ctx: Context) => {
 });
 
 ordersRouter.post("/", (ctx: Context) => {
-    return { message: "Orders posted!" };
+  const productId = ctx.req.body.productId;
+  const quantity = ctx.req.body.quantity;
+  const order = { productId, quantity };
+  return { message: "Orders posted!", order };
 });
 
 ordersRouter.get("/:orderId", (ctx: Context) => {
