@@ -2,47 +2,57 @@ import { Router, Context } from "https://deno.land/x/denotrain/mod.ts";
 
 const productsRouter = new Router();
 
-productsRouter.get("/", (ctx: Context) => {
-  return {
-    hello: "products",
-    method: "get",
-  };
+productsRouter.get("/", async (ctx: Context) => {
+  let productsList = await ctx.data.productsCollection.find();
+  productsList = productsList.map((p: any) => {
+    return {
+      ...p,
+      Request: {
+        method: 'GET',
+        url: `http://localhost:3001/products/${p._id.$oid}`
+      }
+    }    
+  });
+
+  return productsList;
 });
 
-productsRouter.post("/", (ctx: Context) => {
-  const name = ctx.req.body.name;
-  const price = ctx.req.body.price;
-  const savedProduct = { name, price };
-  return {
-    hello: "products",
-    method: "post",
-    savedProduct,
-  };
+productsRouter.post("/", async (ctx: Context) => {
+  const product_name: string = ctx.req.body.name;
+  const price: number = ctx.req.body.price;
+  const savedProduct = { product_name, price };
+  const insertId = await ctx.data.productsCollection.insertOne(savedProduct);
+  return insertId;
 });
 
-productsRouter.get("/:productId", (ctx: Context) => {
-  const id = ctx.req.params.productId;
-  if (id === "special") {
-    return {
-      message: "You discovered the special ID.",
-    };
-  } else {
-    return {
-      message: "Product ID received",
-      id,
-    };
+productsRouter.get("/:productId", async (ctx: Context) => {
+  const _id = { $oid: ctx.req.params.productId};
+  const product = await ctx.data.productsCollection.findOne({ _id } );
+  if (product) {
+    return product;
   }
+  return { message: 'Not found'};
 });
 
-productsRouter.patch("/:productId", (ctx: Context) => {
+productsRouter.patch("/:productId", async (ctx: Context) => {
+  const _id = ctx.req.params.productId;
+  const updateProperties = ctx.req.body;
+
+  const { matchedCount, modifiedCount, upsertedId } = await ctx.data.productsCollection.updateOne(
+    _id,
+    { $set: updateProperties }
+  );
   return {
-    message: `Product ${ctx.req.params.productId} updated!`,
+    message: `matchedCount: ${matchedCount}, modifiedCount: ${modifiedCount}, upsertedId: ${upsertedId}`,
   };
 });
 
-productsRouter.delete("/:productId", (ctx: Context) => {
+productsRouter.delete("/:productId", async (ctx: Context) => {
+  const _id = ctx.req.params.productId;
+  const deleteCount = await ctx.data.productsCollection.deleteOne({ _id });
   return {
     message: `Product ${ctx.req.params.productId} deleted!`,
+    items_deleted: deleteCount
   };
 });
 
